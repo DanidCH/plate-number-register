@@ -5,6 +5,8 @@ namespace App\Controller;
 use App\Entity\NumberPlate;
 use App\Form\NumberPlateType;
 use Doctrine\Persistence\ManagerRegistry;
+use Imagine\Gd\Imagine;
+use Imagine\Image\Box;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\Request;
@@ -14,6 +16,15 @@ use Symfony\Component\String\Slugger\SluggerInterface;
 
 class NumberPlateController extends AbstractController
 {
+    private const MAX_SIZE = 2000;
+
+    private $imagine;
+
+    public function __construct()
+    {
+        $this->imagine = new Imagine();
+    }
+
     #[Route('/{initials}', name: 'app_number_plate', requirements: ['initials' => '[A-Z]{2,3}'])]
     public function index(Request $request, ManagerRegistry $doctrine, SluggerInterface $slugger, string $initials): Response
     {
@@ -44,6 +55,7 @@ class NumberPlateController extends AbstractController
 
                 $doctrine->getManager()->persist($numberPlate);
                 $doctrine->getManager()->flush();
+                $this->resize($newFilename);
                 $this->addFlash('success', 'Plate number saved');
             } catch (FileException $e) {
                 $this->addFlash('error', $e->getMessage());
@@ -54,5 +66,24 @@ class NumberPlateController extends AbstractController
         return $this->render('number_plate/new.html.twig', [
             'form' => $form->createView(),
         ]);
+    }
+
+    private function resize(string $filename): void
+    {
+        $filename = $this->getParameter('number_plate_folder').$filename;
+        list($iwidth, $iheight) = getimagesize($filename);
+
+        $ratio = $iwidth/$iheight;
+        $width = self::MAX_SIZE;
+        $height = self::MAX_SIZE;
+
+        if ($width / $height > $ratio) {
+            $width = $height * $ratio;
+        } else {
+            $height = $width / $ratio;
+        }
+
+        $photo = $this->imagine->open($filename);
+        $photo->resize(new Box($width, $height))->save($filename);
     }
 }
