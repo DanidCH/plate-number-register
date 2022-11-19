@@ -5,6 +5,7 @@
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
     allowed_initials: '%env(json:ALLOWED_INITIALS)%'
+    number_plate_folder: '../images/'
 
 services:
     # default configuration for services in *this* file

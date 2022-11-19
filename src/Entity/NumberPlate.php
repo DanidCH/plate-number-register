@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\NumberPlateRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: NumberPlateRepository::class)]
 #[ORM\HasLifecycleCallbacks]
@@ -16,8 +17,8 @@ class NumberPlate
     private ?int $id = null;
 
     #[ORM\Column(length: 64)]
-    #[Assert\Regex('/^[a-zA-Z]{2}[0-9 ]+/gm')]
     #[Assert\NotBlank]
+    #[Assert\Regex('/^[a-zA-Z]{2}[0-9 ]+$/')]
     private ?string $numberPlate = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
@@ -26,6 +27,9 @@ class NumberPlate
     #[ORM\Column(length: 3)]
     #[Assert\NotBlank]
     private ?string $initials = null;
+
+    #[ORM\Column(length: 255)]
+    private ?string $file = null;
 
     public function getId(): ?int
     {
@@ -39,7 +43,7 @@ class NumberPlate
 
     public function setNumberPlate(string $numberPlate): self
     {
-        $this->numberPlate = $numberPlate;
+        $this->numberPlate = strtoupper(preg_replace('/\s+/', '', $numberPlate));
 
         return $this;
     }
@@ -65,6 +69,17 @@ class NumberPlate
     public function setCreatedAtValue(): void
     {
         $this->createdAt = new \DateTimeImmutable();
-        $this->numberPlate = strtoupper(preg_replace('/\s+/', '', $this->numberPlate));
+    }
+
+    public function getFile(): ?string
+    {
+        return $this->file;
+    }
+
+    public function setFile(string $file): self
+    {
+        $this->file = $file;
+
+        return $this;
     }
 }

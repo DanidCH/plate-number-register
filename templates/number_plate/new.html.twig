@@ -9,6 +9,11 @@
 </style>
 
 <div class="example-wrapper">
-    {{ form(form) }}
+    {{ form_start(form) }}
+        {{ form_errors(form) }}
+        {{ form_row(form.numberPlate) }}
+        {{ form_row(form.file) }}
+        {{ form_row(form.submit) }}
+    {{ form_end(form) }}
 </div>
 {% endblock %}
