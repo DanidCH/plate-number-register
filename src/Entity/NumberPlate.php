@@ -29,6 +29,18 @@ class NumberPlate
     private ?string $initials = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\File(
+        maxSize: '10M',
+        mimeTypes: [
+            'image/heic',
+            'image/jpe',
+            'image/jpeg',
+            'image/jpg',
+            'image/png',
+            'image/tiff',
+            'image/webp',
+        ]
+    )]
     private ?string $file = null;
 
     public function getId(): ?int
