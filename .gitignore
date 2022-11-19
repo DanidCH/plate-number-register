@@ -18,4 +18,5 @@
 .phpunit.result.cache
 /phpunit.xml
 /.idea
+/images/*
 ###< symfony/phpunit-bridge ###

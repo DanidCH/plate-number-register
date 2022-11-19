@@ -27,8 +27,6 @@ class NumberPlateController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $this->addFlash('success', 'Plate number saved');
-
             $image = $form->get('file')->getData();
 
             try {
@@ -46,9 +44,11 @@ class NumberPlateController extends AbstractController
 
                 $doctrine->getManager()->persist($numberPlate);
                 $doctrine->getManager()->flush();
+                $this->addFlash('success', 'Plate number saved');
             } catch (FileException $e) {
                 $this->addFlash('error', $e->getMessage());
             }
+            return $this->redirectToRoute('app_number_plate', ['initials' => $initials]);
         }
 
         return $this->render('number_plate/new.html.twig', [
