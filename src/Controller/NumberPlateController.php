@@ -52,9 +52,18 @@ class NumberPlateController extends AbstractController
                 );
 
                 $numberPlate->setFile($newFilename);
+                $exifData = exif_read_data($newFilename);
+                if ($exifData !== false) {
+                    if (array_key_exists('FILE', $exifData) && array_key_exists('FileDateTime', $exifData['FILE'])) {
+                        $pictureTakenOn = new \DateTime($exifData['FILE']['FileDateTime']);
+                        $numberPlate->setCreatedAtValue($pictureTakenOn);
+                    } elseif (array_key_exists('FILE', $exifData))
+
+                }
 
                 $doctrine->getManager()->persist($numberPlate);
                 $doctrine->getManager()->flush();
+
                 $this->resize($newFilename);
                 $this->addFlash('success', 'Plate number saved');
             } catch (FileException $e) {
