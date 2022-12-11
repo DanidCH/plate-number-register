@@ -52,7 +52,7 @@ class NumberPlateController extends AbstractController
                 );
 
                 $numberPlate->setFile($newFilename);
-                $exifData = exif_read_data($newFilename);
+                $exifData = exif_read_data($this->getParameter('number_plate_folder').'/'.$newFilename);
                 if ($exifData !== false) {
                     if (array_key_exists('FILE', $exifData) && array_key_exists('FileDateTime', $exifData['FILE'])) {
                         $pictureTakenOn = new \DateTime($exifData['FILE']['FileDateTime']);
