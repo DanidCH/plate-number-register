@@ -56,9 +56,11 @@ class NumberPlateController extends AbstractController
                 if ($exifData !== false) {
                     if (array_key_exists('FILE', $exifData) && array_key_exists('FileDateTime', $exifData['FILE'])) {
                         $pictureTakenOn = new \DateTime($exifData['FILE']['FileDateTime']);
-                        $numberPlate->setCreatedAtValue($pictureTakenOn);
-                    } elseif (array_key_exists('FILE', $exifData))
-
+                        $numberPlate->setCreatedAt($pictureTakenOn);
+                    } elseif (array_key_exists('DateTimeOriginal', $exifData) ) {
+                        $pictureTakenOn = new \DateTime($exifData['FILE']['DateTimeOriginal']);
+                        $numberPlate->setCreatedAt($pictureTakenOn);
+                    }
                 }
 
                 $doctrine->getManager()->persist($numberPlate);

@@ -65,6 +65,12 @@ class NumberPlate
         return $this->createdAt;
     }
 
+    public function setCreatedAt(\DateTime $dateTime): self
+    {
+        $this->createdAt = $dateTime;
+        return $this;
+    }
+
     public function getInitials(): ?string
     {
         return $this->initials;
