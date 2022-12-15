@@ -12,21 +12,26 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
 class NumberPlateController extends AbstractController
 {
     private const MAX_SIZE = 2000;
 
-    private $imagine;
+    private Imagine $imagine;
+    private MailerInterface $mailer;
+    private ManagerRegistry $doctrine;
 
-    public function __construct()
+    public function __construct(MailerInterface $mailer, ManagerRegistry $doctrine)
     {
         $this->imagine = new Imagine();
+        $this->mailer = $mailer;
+        $this->doctrine = $doctrine;
     }
 
     #[Route('/{initials}', name: 'app_number_plate', requirements: ['initials' => '[A-Z]{2,3}'])]
-    public function index(Request $request, ManagerRegistry $doctrine, string $initials): Response
+    public function index(Request $request, string $initials): Response
     {
         if (!in_array($initials, $this->getParameter('allowed_initials'))) {
             throw $this->createNotFoundException();
@@ -41,7 +46,7 @@ class NumberPlateController extends AbstractController
             // Check if someone already inserted the number place
             $datetime = new \DateTime('-1 day');
 
-            if ($doctrine->getRepository(NumberPlate::class)->findWithinTime($numberPlate->getNumberPlate(), $datetime) === 0){
+            if ($this->doctrine->getRepository(NumberPlate::class)->findWithinTime($numberPlate->getNumberPlate(), $datetime) === 0){
                 $image = $form->get('file')->getData();
 
                 try {
@@ -62,8 +67,8 @@ class NumberPlateController extends AbstractController
                         }
                     }
 
-                    $doctrine->getManager()->persist($numberPlate);
-                    $doctrine->getManager()->flush();
+                    $this->doctrine->getManager()->persist($numberPlate);
+                    $this->doctrine->getManager()->flush();
 
                     $this->resize($newFilename);
                     $this->addFlash('success', 'Plate number saved');
@@ -75,7 +80,7 @@ class NumberPlateController extends AbstractController
             }
 
             // Send an email if the numberplate has been already registered
-            $this->checkForRecidivist($doctrine, $numberPlate);
+            $this->checkForRecidivist($numberPlate);
 
             return $this->redirectToRoute('app_number_plate', ['initials' => $initials]);
         }
@@ -104,9 +109,9 @@ class NumberPlateController extends AbstractController
         $photo->resize(new Box($width, $height))->save($filename);
     }
 
-    private function checkForRecidivist(ManagerRegistry $doctrine, NumberPlate $numberPlate): void
+    private function checkForRecidivist(NumberPlate $numberPlate): void
     {
-        $result = $doctrine->getRepository(NumberPlate::class)->findByNumberPlate($numberPlate->getNumberPlate());
+        $result = $this->doctrine->getRepository(NumberPlate::class)->findByNumberPlate($numberPlate->getNumberPlate());
 
         if (count($result) > 1) {
             $email = new TemplatedEmail();
@@ -118,6 +123,16 @@ class NumberPlateController extends AbstractController
                     'number_plate' => $numberPlate
                 ])
             ;
+
+            foreach ($result as $registration) {
+                $email->attachFromPath($this->getParameter('number_plate_folder').'/'.$registration->getFile());
+            }
+
+            try {
+                $this->mailer->send($email);
+            } catch (HandlerFailedException $e) {
+                $this->addFlash('error', 'Error while sending e-mail');
+            }
         }
     }
 }
