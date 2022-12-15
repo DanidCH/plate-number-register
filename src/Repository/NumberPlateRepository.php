@@ -39,28 +39,16 @@ class NumberPlateRepository extends ServiceEntityRepository
         }
     }
 
-//    /**
-//     * @return NumberPlate[] Returns an array of NumberPlate objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('n')
-//            ->andWhere('n.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('n.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    public function findWithinTime(string $numberPlate, \DateTime $dateTime): int
+    {
+        $qb = $this->createQueryBuilder('np')
+            ->select('count(np.id)')
+            ->andWhere('np.numberPlate = :numberPlate')
+            ->andWhere('np.createdAt >= :dateTime')
+            ->setParameter('numberPlate', $numberPlate)
+            ->setParameter('dateTime', $dateTime)
+        ;
 
-//    public function findOneBySomeField($value): ?NumberPlate
-//    {
-//        return $this->createQueryBuilder('n')
-//            ->andWhere('n.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+        return $qb->getQuery()->getSingleScalarResult();
+    }
 }

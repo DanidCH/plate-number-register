@@ -38,36 +38,43 @@ class NumberPlateController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $image = $form->get('file')->getData();
+            // Check if someone already inserted the number place
+            $datetime = new \DateTime('-1 day');
 
-            try {
-                $originalFilename = pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME);
+            if ($doctrine->getRepository(NumberPlate::class)->findWithinTime($numberPlate->getNumberPlate(), $datetime) === 0){
+                $image = $form->get('file')->getData();
 
-                $safeFilename = $slugger->slug($originalFilename);
-                $newFilename = $safeFilename.'-'.uniqid().'.'.$image->guessExtension();
+                try {
+                    $originalFilename = pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME);
 
-                $image->move(
-                    $this->getParameter('number_plate_folder'),
-                    $newFilename
-                );
+                    $safeFilename = $slugger->slug($originalFilename);
+                    $newFilename = $safeFilename.'-'.uniqid().'.'.$image->guessExtension();
 
-                $numberPlate->setFile($newFilename);
-                $exifData = exif_read_data($this->getParameter('number_plate_folder').'/'.$newFilename);
+                    $image->move(
+                        $this->getParameter('number_plate_folder'),
+                        $newFilename
+                    );
 
-                if ($exifData !== false) {
-                    if (array_key_exists('DateTimeOriginal', $exifData) ) {
-                        $pictureTakenOn = new \DateTime($exifData['DateTimeOriginal']);
-                        $numberPlate->setCreatedAt($pictureTakenOn);
+                    $numberPlate->setFile($newFilename);
+                    $exifData = exif_read_data($this->getParameter('number_plate_folder').'/'.$newFilename);
+
+                    if ($exifData !== false) {
+                        if (array_key_exists('DateTimeOriginal', $exifData) ) {
+                            $pictureTakenOn = new \DateTime($exifData['DateTimeOriginal']);
+                            $numberPlate->setCreatedAt($pictureTakenOn);
+                        }
                     }
+
+                    $doctrine->getManager()->persist($numberPlate);
+                    $doctrine->getManager()->flush();
+
+                    $this->resize($newFilename);
+                    $this->addFlash('success', 'Plate number saved');
+                } catch (FileException $e) {
+                    $this->addFlash('error', $e->getMessage());
                 }
-
-                $doctrine->getManager()->persist($numberPlate);
-                $doctrine->getManager()->flush();
-
-                $this->resize($newFilename);
-                $this->addFlash('success', 'Plate number saved');
-            } catch (FileException $e) {
-                $this->addFlash('error', $e->getMessage());
+            } else {
+                $this->addFlash('warning', 'Plate number already saved since: '.$datetime->format('d.m.Y H:i'));
             }
             return $this->redirectToRoute('app_number_plate', ['initials' => $initials]);
         }
