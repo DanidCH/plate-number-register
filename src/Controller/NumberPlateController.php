@@ -7,12 +7,12 @@ use App\Form\NumberPlateType;
 use Doctrine\Persistence\ManagerRegistry;
 use Imagine\Gd\Imagine;
 use Imagine\Image\Box;
+use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\String\Slugger\SluggerInterface;
 
 class NumberPlateController extends AbstractController
 {
@@ -73,6 +73,10 @@ class NumberPlateController extends AbstractController
             } else {
                 $this->addFlash('warning', 'Plate number already saved since: '.$datetime->format('d.m.Y H:i'));
             }
+
+            // Send an email if the numberplate has been already registered
+            $this->checkForRecidivist($doctrine, $numberPlate);
+
             return $this->redirectToRoute('app_number_plate', ['initials' => $initials]);
         }
 
@@ -98,5 +102,22 @@ class NumberPlateController extends AbstractController
 
         $photo = $this->imagine->open($filename);
         $photo->resize(new Box($width, $height))->save($filename);
+    }
+
+    private function checkForRecidivist(ManagerRegistry $doctrine, NumberPlate $numberPlate): void
+    {
+        $result = $doctrine->getRepository(NumberPlate::class)->findByNumberPlate($numberPlate->getNumberPlate());
+
+        if (count($result) > 1) {
+            $email = new TemplatedEmail();
+            $email->subject('Recidive de parking')
+                ->htmlTemplate('email/recidiving_number_plate.html.twig')
+                ->textTemplate('email/recidiving_number_plate.txt.twig')
+                ->context([
+                    'registrations' => $result,
+                    'number_plate' => $numberPlate
+                ])
+            ;
+        }
     }
 }

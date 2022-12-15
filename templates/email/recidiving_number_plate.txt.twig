@@ -1,0 +1,9 @@
+Bonjour,
+
+Le numéro de plaque {{ number_plate.number_plate }} s'est garé {{ registrations|count }} sur les places du cabinet.
+
+Le véhicule s'est garé aux dates suivantes:
+
+{% for registration in registrations %}
+- {{ registration.created|date("d.m.Y H:i") }}
+{% endfor %}
