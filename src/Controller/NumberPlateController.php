@@ -26,7 +26,7 @@ class NumberPlateController extends AbstractController
     }
 
     #[Route('/{initials}', name: 'app_number_plate', requirements: ['initials' => '[A-Z]{2,3}'])]
-    public function index(Request $request, ManagerRegistry $doctrine, SluggerInterface $slugger, string $initials): Response
+    public function index(Request $request, ManagerRegistry $doctrine, string $initials): Response
     {
         if (!in_array($initials, $this->getParameter('allowed_initials'))) {
             throw $this->createNotFoundException();
@@ -45,10 +45,7 @@ class NumberPlateController extends AbstractController
                 $image = $form->get('file')->getData();
 
                 try {
-                    $originalFilename = pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME);
-
-                    $safeFilename = $slugger->slug($originalFilename);
-                    $newFilename = $safeFilename.'-'.uniqid().'.'.$image->guessExtension();
+                    $newFilename = $initials.'-'.time().'-'.uniqid().'.'.$image->guessExtension();
 
                     $image->move(
                         $this->getParameter('number_plate_folder'),
