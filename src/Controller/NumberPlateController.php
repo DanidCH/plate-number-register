@@ -14,6 +14,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -158,7 +159,7 @@ class NumberPlateController extends AbstractController
                     'registrations' => $result,
                     'number_plate' => $numberPlate
                 ])
-                ->from($this->getParameter('e_mail.from'))
+                ->from(new Address($this->getParameter('e_mail.from'), "Site d'enregistrement des plaques"))
                 ->to($this->getParameter('e_mail.to'))
             ;
 
