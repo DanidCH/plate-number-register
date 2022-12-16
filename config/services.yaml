@@ -6,6 +6,10 @@
 parameters:
     allowed_initials: '%env(json:ALLOWED_INITIALS)%'
     number_plate_folder: '../images/'
+    test_key: '%env(string:TEST_KEY)%'
+
+    e_mail.from: '%env(string:EMAIL_FROM)%'
+    e_mail.to: '%env(string:EMAIL_TO)%'
 
 services:
     # default configuration for services in *this* file

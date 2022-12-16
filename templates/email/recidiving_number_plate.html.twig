@@ -16,7 +16,8 @@
         <![endif]-->
         <style>
             table, td, div, h1, p {font-family: Arial, sans-serif;}
-            table, td {border:2px solid #000000 !important;}
+            p, li {text-align: left}
+            table, td {border:0px none #000000 !important;}
         </style>
     </head>
     <body style="margin:0;padding:0;">
@@ -27,13 +28,13 @@
                 </td>
             </tr>
             <tr>
-                <td align="center" style="padding:0;">
+                <td align="center" style="padding:10px;">
                     <p>Bonjour,</p>
-                    <p>Le numéro de plaque {{ number_plate.number_plate }} s'est garé {{ registrations|count }} sur les places du cabinet.</p>
+                    <p>Le numéro de plaque {{ number_plate.numberPlate }} s'est garé {{ registrations|length }} fois sur les places du cabinet.</p>
                     <p>Le véhicule s'est garé aux dates suivantes:</p>
                     <ul>
                         {% for registration in registrations %}
-                            <li>{{ registration.created|date("d.m.Y H:i") }}</li>
+                            <li>{{ registration.createdAt|date("d.m.Y H:i") }}</li>
                         {% endfor %}
                     </ul>
                 </td>

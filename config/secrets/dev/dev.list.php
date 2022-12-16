@@ -8,4 +8,5 @@ return [
     'EMAIL_TO' => null,
     'RECAPTCHA3_KEY' => null,
     'RECAPTCHA3_SECRET' => null,
+    'TEST_KEY' => null,
 ];

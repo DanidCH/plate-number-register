@@ -2,5 +2,5 @@ framework:
     mailer:
         dsn: '%env(EMAIL_SMTP)%'
         envelope:
-            sender: '%env(EMAIL_FROM)%'
-            recipients: ['%env(EMAIL_TO)%']
+            sender: '%env(string:EMAIL_FROM)%'
+            recipients: ['%env(string:EMAIL_TO)%']
