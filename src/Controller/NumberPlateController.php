@@ -159,8 +159,6 @@ class NumberPlateController extends AbstractController
                     'registrations' => $result,
                     'number_plate' => $numberPlate
                 ])
-                ->from(new Address($this->getParameter('e_mail.from'), "Site d'enregistrement des plaques"))
-                ->to($this->getParameter('e_mail.to'))
             ;
 
             foreach ($result as $registration) {

@@ -4,3 +4,5 @@ framework:
         envelope:
             sender: '%env(string:EMAIL_FROM)%'
             recipients: ['%env(string:EMAIL_TO)%']
+        headers:
+            From: "Site d'enregistrement des plaques <%env(string:EMAIL_FROM)%>"
