@@ -7,12 +7,16 @@ use Karser\Recaptcha3Bundle\Form\Recaptcha3Type;
 use Karser\Recaptcha3Bundle\Validator\Constraints\Recaptcha3;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\CallbackTransformer;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\ResetType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotNull;
 
 class NumberPlateType extends AbstractType
@@ -21,7 +25,6 @@ class NumberPlateType extends AbstractType
     {
         $builder
             ->add('numberPlate')
-            ->add('initials', HiddenType::class)
             ->add('file', FileType::class, [
                 'required' => true,
                 'constraints' => [
@@ -35,6 +38,20 @@ class NumberPlateType extends AbstractType
                 'locale' => 'de',
             ])
         ;
+
+        if ($options['old']) {
+            $builder
+                ->add('initials', ChoiceType::class, [
+                    'choices' => $options['initialOptions'],
+                    'choice_label' => function ($choice, $key, $value) {
+                        return $value;
+                    }
+                ])
+                ->add('createdAt', DateTimeType::class)
+            ;
+        } else {
+            $builder->add('initials', HiddenType::class);
+        }
 
         $builder->get('numberPlate')
             ->addModelTransformer(new CallbackTransformer(
@@ -52,6 +69,8 @@ class NumberPlateType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => NumberPlate::class,
+            'old' => false,
+            'initialOptions' => [],
         ]);
     }
 }

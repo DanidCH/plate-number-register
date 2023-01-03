@@ -62,6 +62,64 @@ class NumberPlateController extends AbstractController
         return $this->render('base.html.twig');
     }
 
+    #[Route('/old/{key}', name: 'app_number_plate_old')]
+    public function old(Request $request, string $key): Response
+    {
+        if ($key !== $this->getParameter('test_key')) {
+            $this->createNotFoundException();
+        }
+
+        $numberPlate = new NumberPlate();
+        $form = $this->createForm(NumberPlateType::class, $numberPlate, ['old' => true, 'initialOptions' => $this->getParameter('allowed_initials')]);
+
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            if (in_array($form->get('initials')->getData(), $this->getParameter('allowed_initials'))) {
+                $image = $form->get('file')->getData();
+
+                try {
+                    $newFilename = $form->get('initials')->getData().'-'.time().'-'.uniqid().'.'.$image->guessExtension();
+
+                    $image->move(
+                        $this->getParameter('number_plate_folder'),
+                        $newFilename
+                    );
+
+                    $numberPlate->setFile($newFilename);
+                    try {
+                        $exifData = exif_read_data($this->getParameter('number_plate_folder').'/'.$newFilename);
+                    } catch (\Exception $exception) {
+                        $exifData = [];
+                    }
+
+                    if ($exifData !== false) {
+                        if (array_key_exists('DateTimeOriginal', $exifData) ) {
+                            $pictureTakenOn = new \DateTime($exifData['DateTimeOriginal']);
+                            $numberPlate->setCreatedAt($pictureTakenOn);
+                        }
+                    }
+
+                    $this->doctrine->getManager()->persist($numberPlate);
+                    $this->doctrine->getManager()->flush();
+
+                    $this->resize($newFilename);
+                    $this->addFlash('success', 'Plate number saved');
+                } catch (FileException $e) {
+                    $this->addFlash('error', $e->getMessage());
+                }
+
+                return $this->redirectToRoute('app_number_plate_old', ['key' => $key]);
+            } else {
+                $this->addFlash('warning', 'Initials aren\'t accepted');
+            }
+        }
+
+        return $this->render('number_plate/old.html.twig', [
+            'form' => $form->createView(),
+        ]);
+    }
+
     #[Route('/{initials}', name: 'app_number_plate', requirements: ['initials' => '[A-Z]{2,3}'])]
     public function index(Request $request, string $initials): Response
     {
@@ -78,7 +136,7 @@ class NumberPlateController extends AbstractController
             // Check if someone already inserted the number place
             $datetime = new \DateTime('today midnight');
 
-            if (true || $this->doctrine->getRepository(NumberPlate::class)->findWithinTime($numberPlate->getNumberPlate(), $datetime) === 0){
+            if ($this->doctrine->getRepository(NumberPlate::class)->findWithinTime($numberPlate->getNumberPlate(), $datetime) === 0){
                 $image = $form->get('file')->getData();
 
                 try {

@@ -26,6 +26,10 @@ class NumberPlate
 
     #[ORM\Column(length: 3)]
     #[Assert\NotBlank]
+    #[Assert\Length(
+        min: 2,
+        max: 3,
+    )]
     private ?string $initials = null;
 
     #[ORM\Column(length: 255)]
