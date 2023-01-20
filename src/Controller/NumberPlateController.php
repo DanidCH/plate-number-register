@@ -14,8 +14,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Address;
-use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Annotation\Route;
 
 class NumberPlateController extends AbstractController
@@ -39,6 +37,7 @@ class NumberPlateController extends AbstractController
         if ($key !== $this->getParameter('test_key')) {
             $this->createNotFoundException();
         }
+
         $numberplate = $this->doctrine->getRepository(NumberPlate::class)->findOneById(48);
         $registrations = $this->doctrine->getRepository(NumberPlate::class)->findAll();
         $email = new TemplatedEmail();
@@ -117,6 +116,37 @@ class NumberPlateController extends AbstractController
 
         return $this->render('number_plate/old.html.twig', [
             'form' => $form->createView(),
+        ]);
+    }
+
+
+    #[Route('/review/{key}', name: 'app_number_plate_review')]
+    public function review(Request $request, string $key): Response
+    {
+        if ($key !== $this->getParameter('test_key')) {
+            $this->createNotFoundException();
+        }
+
+        $em = $this->doctrine->getRepository(NumberPlate::class);
+        $numberPlates = $em->findAllDistinctNumberPlates();
+
+        $recedivists = [];
+        foreach ($numberPlates as $numberPlate) {
+            $registrations = $em->findByNumberPlate($numberPlate, ['createdAt' => 'DESC']);
+            if (count($registrations) > 1) {
+                $recedivists[] = $registrations;
+            }
+        }
+
+        if ($resendNumberPlate = $request->request->get('number_plate')) {
+            $numberPlateToResend = $em->findOneByNumberPlate($resendNumberPlate);
+            $this->checkForRecidivist($numberPlateToResend, true);
+            $this->addFlash('success', sprintf('Review sent for number plate: %s', $resendNumberPlate));
+        }
+
+        return $this->render('number_plate/recap.html.twig', [
+            'recedivists' => $recedivists,
+            'folder' => $this->getParameter('number_plate_folder'),
         ]);
     }
 
@@ -203,20 +233,22 @@ class NumberPlateController extends AbstractController
         $photo->resize(new Box($width, $height))->save($filename);
     }
 
-    private function checkForRecidivist(NumberPlate $numberPlate): void
+    private function checkForRecidivist(NumberPlate $numberPlate, bool $reminder = false): void
     {
         $result = $this->doctrine->getRepository(NumberPlate::class)->findByNumberPlate($numberPlate->getNumberPlate());
 
         if (count($result) > 1) {
-            dump('Email should be sent');
             $email = new TemplatedEmail();
             $email->subject('Recidive de parking')
                 ->htmlTemplate('email/recidiving_number_plate.html.twig')
                 ->textTemplate('email/recidiving_number_plate.txt.twig')
                 ->context([
                     'registrations' => $result,
-                    'number_plate' => $numberPlate
+                    'number_plate' => $numberPlate,
+                    'reminder' => $reminder,
                 ])
+                ->from($this->getParameter('e_mail.from'))
+                ->to($this->getParameter('e_mail.to'))
             ;
 
             foreach ($result as $registration) {

@@ -1,6 +1,6 @@
 Bonjour,
 
-Le numéro de plaque {{ number_plate.numberPlate }} s'est garé {{ registrations|length }} fois sur les places du cabinet.
+Le numéro de plaque {{ number_plate.numberPlate }} s'est garé {{ registrations|length }} fois sur les places du cabinet.{% if reminder %} Ceci est un récapitulatif et doit être vérifié.{% endif %}
 
 Le véhicule s'est garé aux dates suivantes:
 

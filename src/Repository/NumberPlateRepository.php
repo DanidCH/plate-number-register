@@ -51,4 +51,14 @@ class NumberPlateRepository extends ServiceEntityRepository
 
         return $qb->getQuery()->getSingleScalarResult();
     }
+
+    public function findAllDistinctNumberPlates(): array
+    {
+        $qb = $this->createQueryBuilder('np')
+            ->select('np.numberPlate')
+            ->distinct()
+        ;
+
+        return $qb->getQuery()->getArrayResult();
+    }
 }

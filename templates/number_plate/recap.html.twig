@@ -1,0 +1,35 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Number plate saver - recap{% endblock %}
+
+{% block body %}
+    <style>
+        .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
+        .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
+    </style>
+
+    <h1>List of recedivists sent</h1>
+
+    {% for type, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ type }}">{{ message }}</div>
+        {% endfor %}
+    {% endfor %}
+
+    <div class="row">
+        {% for recedivist in recedivists %}
+            <div class="col-6">
+                <h2>{{ recedivist|first.numberPlate }}</h2>
+                <ul class="m-10">
+                    {% for registration in recedivist %}
+                        <li>{{ registration.createdAt|date("d.m.Y H:i")}}</li>
+                    {% endfor %}
+                </ul>
+                <form method="post">
+                    <input type="hidden" value="{{ recedivist|first.numberPlate }}" name="number_plate">
+                    <button type="submit" class="btn btn-primary">Resend email for {{ recedivist|first.numberPlate }}</button>
+                </form>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
